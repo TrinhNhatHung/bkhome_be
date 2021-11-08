@@ -1,6 +1,7 @@
 package com.bkhome.service;
 
 import com.bkhome.dao.RoomDao;
+import com.bkhome.dao.RoomUtilityDao;
 import com.bkhome.persistence.Room;
 import com.bkhome.persistence.RoomUtility;
 import com.bkhome.persistence.Utility;
@@ -9,10 +10,7 @@ import com.bkhome.utils.FirebaseUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,6 +18,9 @@ public class RoomService extends EntityService<Room> {
 
     @Autowired
     private RoomDao roomDao;
+
+    @Autowired
+    private RoomUtilityDao roomUtilityDao;
 
     @Autowired
     private FirebaseUtil firebaseUtil;
@@ -35,17 +36,13 @@ public class RoomService extends EntityService<Room> {
         result.put("area", room.getArea());
         result.put("updateAt", DateUtils.toString(room.getUpdateAt(), "dd/MM/yyyy HH:mm:ss"));
 
-        List<Map<String, Object>> imageUrls = room.getImages().stream()
-                .map(image -> {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("link", firebaseUtil.getFileUrl(image.getLink()));
-                    return map;
-                })
+        List<String> imageUrls = room.getImages().stream()
+                .map(image -> firebaseUtil.getFileUrl(image.getLink()))
                 .collect(Collectors.toList());
         result.put("images", imageUrls);
-        List<String> utilities = room.getRoomUtilities().stream()
+        List<Integer> utilities = room.getRoomUtilities().stream()
                 .map(RoomUtility::getUtility)
-                .map(Utility::getName)
+                .map(Utility::getId)
                 .collect(Collectors.toList());
         result.put("utilities", utilities);
 
@@ -59,12 +56,18 @@ public class RoomService extends EntityService<Room> {
     public List<Map<String, Object>> getRooms() {
         List<Map<String, Object>> result;
         List<Room> rooms = roomDao.getAll(Room.class);
+        rooms = rooms.stream()
+                .sorted(Comparator.comparing(Room::getUpdateAt, Comparator.reverseOrder()))
+                .collect(Collectors.toList());
         result = rooms.stream().map(this::convertRoom).collect(Collectors.toList());
         return result;
     }
 
     public List<Map<String, Object>> getRoomByUser(String userId) {
         List<Room> rooms = roomDao.getRoomByUser(userId);
+        rooms = rooms.stream()
+                    .sorted(Comparator.comparing(Room::getUpdateAt, Comparator.reverseOrder()))
+                    .collect(Collectors.toList());
         return rooms.stream().map(this::convertRoom).collect(Collectors.toList());
     }
 
@@ -85,6 +88,9 @@ public class RoomService extends EntityService<Room> {
     }
 
     public void updateOrInsert(Room room) {
+        if (room.getId() != null){
+            roomUtilityDao.delete(room);
+        }
         roomDao.insertOrUpdate(room);
     }
 

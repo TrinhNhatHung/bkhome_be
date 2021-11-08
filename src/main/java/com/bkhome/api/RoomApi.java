@@ -13,7 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -53,21 +52,21 @@ public class RoomApi {
     }
 
     @DeleteMapping(value = "deleteRooms")
-    public ResponseEntity<?> deleteRoom(@RequestParam(name = "rooms") Integer[] roomIds){
+    public ResponseEntity<?> deleteRoom(@RequestParam(name = "rooms") Integer[] roomIds) {
         System.out.println(Arrays.toString(roomIds));
         try {
             roomService.delete(roomIds);
             return new ResponseEntity<>(HttpStatus.OK);
-        } catch (Exception e){
+        } catch (Exception e) {
             Map<String, String> map = new HashMap<>();
             map.put("message", "Delete fail");
-            return new ResponseEntity<>(map,HttpStatus.OK);
+            return new ResponseEntity<>(map, HttpStatus.OK);
         }
     }
 
     @PostMapping(value = "/addRoom", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> addRoom(@ModelAttribute Room room,
-                                     @RequestParam(value = "imageFiles", required = false) MultipartFile[] imageFiles,
+                                     @RequestParam(name = "imageFiles", required = false) MultipartFile[] imageFiles,
                                      @RequestParam(name = "utilities", required = false) List<Integer> utilityIds) {
 
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -95,7 +94,7 @@ public class RoomApi {
             }
             roomService.updateOrInsert(room);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             Map<String, String> map = new HashMap<>();
             map.put("message", "Fail");
