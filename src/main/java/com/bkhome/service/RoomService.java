@@ -25,6 +25,10 @@ public class RoomService extends EntityService<Room> {
     @Autowired
     private FirebaseUtil firebaseUtil;
 
+    public Room getDetailRoomObject(Integer roomId){
+        return roomDao.getById(Room.class,roomId);
+    }
+
     public Map<String, Object> getDetailRoom(Integer roomId) {
         Room room = roomDao.getById(Room.class, roomId);
         Map<String, Object> result = new HashMap<>();
@@ -36,10 +40,7 @@ public class RoomService extends EntityService<Room> {
         result.put("area", room.getArea());
         result.put("updateAt", DateUtils.toString(room.getUpdateAt(), "dd/MM/yyyy HH:mm:ss"));
 
-        List<String> imageUrls = room.getImages().stream()
-                .map(image -> firebaseUtil.getFileUrl(image.getLink()))
-                .collect(Collectors.toList());
-        result.put("images", imageUrls);
+        result.put("image", firebaseUtil.getFileUrl(room.getImage()));
         List<Integer> utilities = room.getRoomUtilities().stream()
                 .map(RoomUtility::getUtility)
                 .map(Utility::getId)
@@ -66,8 +67,8 @@ public class RoomService extends EntityService<Room> {
     public List<Map<String, Object>> getRoomByUser(String userId) {
         List<Room> rooms = roomDao.getRoomByUser(userId);
         rooms = rooms.stream()
-                    .sorted(Comparator.comparing(Room::getUpdateAt, Comparator.reverseOrder()))
-                    .collect(Collectors.toList());
+                .sorted(Comparator.comparing(Room::getUpdateAt, Comparator.reverseOrder()))
+                .collect(Collectors.toList());
         return rooms.stream().map(this::convertRoom).collect(Collectors.toList());
     }
 
@@ -79,16 +80,12 @@ public class RoomService extends EntityService<Room> {
         map.put("area", room.getArea());
         map.put("title", room.getTitle());
         map.put("updateAt", DateUtils.toString(room.getUpdateAt(), "dd/MM/yyyy HH:mm:ss"));
-        String image = null;
-        if (room.getImages().size() > 0) {
-            image = firebaseUtil.getFileUrl(room.getImages().get(0).getLink());
-        }
-        map.put("image", image);
+        map.put("image", firebaseUtil.getFileUrl(room.getImage()));
         return map;
     }
 
     public void updateOrInsert(Room room) {
-        if (room.getId() != null){
+        if (room.getId() != null) {
             roomUtilityDao.delete(room);
         }
         roomDao.insertOrUpdate(room);

@@ -37,6 +37,9 @@ public class Room {
     @Column(name = "detail")
     private String detail;
 
+    @Column(name = "image")
+    private String image;
+
     @Column(name = "createAt")
     @CreationTimestamp
     private LocalDateTime createAt;
@@ -47,9 +50,6 @@ public class Room {
 
     @OneToMany(mappedBy = "room", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<RoomUtility> roomUtilities;
-
-    @OneToMany(mappedBy = "room", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Image> images;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "FK_Room_User"))

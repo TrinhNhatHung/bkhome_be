@@ -66,21 +66,14 @@ public class RoomApi {
 
     @PostMapping(value = "/addRoom", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> addRoom(@ModelAttribute Room room,
-                                     @RequestParam(name = "imageFiles", required = false) MultipartFile[] imageFiles,
+                                     @RequestParam(name = "imageFile", required = false) MultipartFile imageFile,
                                      @RequestParam(name = "utilities", required = false) List<Integer> utilityIds) {
 
         UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         try {
-            List<String> fileNames = firebaseUtil.uploadFile(imageFiles);
-            List<Image> images = fileNames.stream().map(link -> {
-                Image image = new Image();
-                image.setLink(link);
-                image.setRoom(room);
-                return image;
-            }).collect(Collectors.toList());
-
-            room.setImages(images);
+            String image = firebaseUtil.uploadFile(imageFile);
+            room.setImage(image);
             User user = new User();
             user.setId(userDetails.getUsername());
             room.setUser(user);
@@ -92,6 +85,51 @@ public class RoomApi {
                 }).collect(Collectors.toList());
                 room.setRoomUtilities(roomUtilities);
             }
+
+            if (room.getId() != null){
+                Room existRoom = roomService.getDetailRoomObject(room.getId());
+                room.setCreateAt(existRoom.getCreateAt());
+            }
+
+            roomService.updateOrInsert(room);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, String> map = new HashMap<>();
+            map.put("message", "Fail");
+            return new ResponseEntity<>(map, HttpStatus.OK);
+        }
+
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PutMapping(value = "/updateRoom", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateRoom(@ModelAttribute Room room,
+                                     @RequestParam(name = "imageFile", required = false) MultipartFile imageFile,
+                                     @RequestParam(name = "utilities", required = false) List<Integer> utilityIds) {
+
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        try {
+            String image = firebaseUtil.uploadFile(imageFile);
+            room.setImage(image);
+            User user = new User();
+            user.setId(userDetails.getUsername());
+            room.setUser(user);
+            if (utilityIds != null) {
+                List<RoomUtility> roomUtilities = utilityIds.stream().map(id -> {
+                    Utility utility = utilityService.getById(id);
+                    RoomUtility.Id roomUtilityId = new RoomUtility.Id(room.getId(), utility.getId());
+                    return new RoomUtility(roomUtilityId, room, utility);
+                }).collect(Collectors.toList());
+                room.setRoomUtilities(roomUtilities);
+            }
+
+            if (room.getId() != null){
+                Room existRoom = roomService.getDetailRoomObject(room.getId());
+                room.setCreateAt(existRoom.getCreateAt());
+            }
+
             roomService.updateOrInsert(room);
 
         } catch (Exception e) {

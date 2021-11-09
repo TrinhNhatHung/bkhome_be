@@ -6,8 +6,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -25,20 +23,10 @@ public class FirebaseUtil {
         return null;
     }
 
-    public List<String> uploadFile(MultipartFile... files) throws IOException {
-
-        List<String> result = new ArrayList<>();
-        if (files != null) {
-            for (MultipartFile file : files) {
-                if (file == null) {
-                    throw new NullPointerException();
-                }
-                String fileName = file.getOriginalFilename();
-                fileName = "" + System.currentTimeMillis() + fileName.substring(fileName.lastIndexOf("."));
-                bucket.create(fileName, file.getInputStream(), file.getContentType());
-                result.add(fileName);
-            }
-        }
-        return result;
+    public String uploadFile(MultipartFile file) throws IOException {
+        String fileName = file.getOriginalFilename();
+        fileName = "" + System.currentTimeMillis() + fileName.substring(fileName.lastIndexOf("."));
+        bucket.create(fileName, file.getInputStream(), file.getContentType());
+        return fileName;
     }
 }
